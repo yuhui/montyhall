@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Monty Hall problem simulation -- Yuhui</title>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <p>This is a simulation of the Monty Hall problem.</p>
+  <blockquote>
+    <p style="font-style: italic;">Suppose you're on a game show, and you're given the choice of three doors: Behind one door is a car; behind the others, goats. You pick a door, say No. 1, and the host, who knows what's behind the doors, opens another door, say No. 3, which has a goat. He then says to you, "Do you want to pick door No. 2?" Is it to your advantage to switch your choice?</p>
+  </blockquote>
+  <p><a href="https://en.wikipedia.org/wiki/Monty_Hall_problem" target="_blank">More information of the problem at Wikipedia.</a></p>
+  <hr/>
+  <p>Number of rounds played: <span id="num_rounds">0</span>.</p>
+  <table border="1" cellpadding="10">
+    <caption>
+      Proper Game
+    </caption>
+    <thead>
+      <tr>
+        <th>Switched?</th>
+        <th>Number of rounds</th>
+        <th>Number of wins</th>
+        <th>Percentage of wins</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Yes</td>
+        <td id="proper_yes_rounds">0</td>
+        <td id="proper_yes_wins">0</td>
+        <td id="proper_yes_percent">0.0%</td>
+      </tr>
+      <tr>
+        <td>No</td>
+        <td id="proper_no_rounds">0</td>
+        <td id="proper_no_wins">0</td>
+        <td id="proper_no_percent">0.0%</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Attempt to shortcut: pre-select doors</p>
+  <ol>
+    <li>Choose the door that Monty will always open first &mdash; this door definitely has a goat.</li>
+    <li>Choose the door for the player such that his door can never be the door that Monty first opens.</li>
+  </ol>
+  <table border="1" cellpadding="10">
+    <caption>
+      Shortcut Game
+    </caption>
+    <thead>
+      <tr>
+        <th>Switched?</th>
+        <th>Number of rounds</th>
+        <th>Number of wins</th>
+        <th>Percentage of wins</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Yes</td>
+        <td id="shortcut_yes_rounds">0</td>
+        <td id="shortcut_yes_wins">0</td>
+        <td id="shortcut_yes_percent">0.0%</td>
+      </tr>
+      <tr>
+        <td>No</td>
+        <td id="shortcut_no_rounds">0</td>
+        <td id="shortcut_no_wins">0</td>
+        <td id="shortcut_no_percent">0.0%</td>
+      </tr>
+    </tbody>
+  </table>
+  <script>
+  (function() {
+    "use strict";
+
+    function randomDoor() {
+      return Math.floor(((Math.random() * 3000) + 1) / 1000);
+    }
+
+    function elementValue(elementId) {
+      var elm = document.getElementById(elementId);
+      var value = elm.textContent || elm.innerText;
+      return +value;
+    }
+
+    function updateText(elementId, value) {
+      if (typeof value === 'undefined') {
+        value = elementValue(elementId);
+        value += 1;
+      }
+      var elm = document.getElementById(elementId);
+      if (elm.textContent) {
+        elm.textContent = value;
+      } else {
+        elm.innerText = value;
+      }
+    }
+
+    var rounds = 1;
+    var playOn;
+
+    function playProper() {
+      var carDoor, goatDoor, playerDoor, playerDidSwitch, doors = '012';
+      var playRounds, playWins, percentage;
+
+      // choose the door where the car is found
+      carDoor = randomDoor();
+
+      // the remaining doors are goat doors
+      doors = doors.replace(carDoor, '').split('');
+
+      // the player selects a door
+      playerDoor = randomDoor();
+
+      // Monty opens another door that has a goat
+      if (playerDoor === carDoor) {
+        // open any of the other doors
+        goatDoor = +doors[Math.random() >= 0.5 ? 1 : 0];
+      } else {
+        // open from doors that is not playerDoor
+        // the other doors have goats, so that means the goat door is the player's door
+        goatDoor = playerDoor;
+      }
+
+      // does the player change his mind?
+      playerDidSwitch = Math.random() >= 0.5 ? 'yes' : 'no';
+      updateText('proper_' + playerDidSwitch + '_rounds');
+      if (playerDidSwitch === 'yes') {
+        playerDoor = playerDoor === carDoor ? goatDoor : carDoor;
+      }
+
+      // let's open his selected door!
+      if (playerDoor === carDoor) {
+        updateText('proper_' + playerDidSwitch + '_wins');
+      }
+
+      playRounds = +elementValue('proper_' + playerDidSwitch + '_rounds');
+      playWins = +elementValue('proper_' + playerDidSwitch + '_wins');
+      percentage = (playWins / playRounds) * 100;
+      percentage = percentage.toFixed(1) + '%';
+      updateText('proper_' + playerDidSwitch + '_percent', percentage);
+    }
+
+    function playShortcut() {
+      var carDoor, eliminatedDoor, playerDoor, doorToSwitch, playerDidSwitch, doors = '012';
+      var playRounds, playWins, percentage;
+
+      // choose the door where the car is found
+      carDoor = randomDoor();
+
+      // choose the door that Monty Hall will open first
+      eliminatedDoor = randomDoor();
+      while (eliminatedDoor === carDoor) {
+        // the eliminated door can't be the one with the car, so choose again
+        eliminatedDoor = randomDoor();
+      }
+
+      // choose the door that the player selects originally
+      playerDoor = randomDoor();
+      while (playerDoor === eliminatedDoor) {
+        // the player can't choose the door that will be opened first, so choose again
+        playerDoor = randomDoor();
+      }
+
+      // if the player wants to switch doors
+      doors = doors.replace(eliminatedDoor, ''); // he can't choose the door that Monty opens
+      doors = doors.replace(playerDoor, ''); // he also can't choose his originally selected door
+      doorToSwitch = +doors;
+
+      // does the player switch doors?
+      playerDidSwitch = Math.random() >= 0.5 ? 'yes' : 'no';
+      updateText('shortcut_' + playerDidSwitch + '_rounds');
+      if (playerDidSwitch === 'yes') {
+        playerDoor = doorToSwitch;
+      }
+
+      // let's open his selected door!
+      if (playerDoor === carDoor) {
+        updateText('shortcut_' + playerDidSwitch + '_wins');
+      }
+
+      playRounds = +elementValue('shortcut_' + playerDidSwitch + '_rounds');
+      playWins = +elementValue('shortcut_' + playerDidSwitch + '_wins');
+      percentage = (playWins / playRounds) * 100;
+      percentage = percentage.toFixed(1) + '%';
+      updateText('shortcut_' + playerDidSwitch + '_percent', percentage);
+    }
+
+    function playGame(numRounds) {
+      updateText('num_rounds', rounds);
+
+      playProper();
+      playShortcut();
+
+      rounds += 1;
+
+      if (rounds > numRounds) {
+        // play for up to 1 minute
+        clearInterval(playOn);
+      }
+    }
+
+    playOn = setInterval(function() {
+      playGame(1000);
+    }, 1);
+  }) ();
+  </script>
+  <p><small>This simulation's source code is available at <a href="https://github.com/yuhui/montyhall">Github</a>.</small></p>
+</body>
+</html>
